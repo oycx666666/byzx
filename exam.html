@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>试卷详情</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* 🎨 试卷专属的排版样式 */
+      .exam-container {
+        background: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-top: 20px;
+      }
+      .exam-header {
+        text-align: center;
+        margin-bottom: 30px;
+        border-bottom: 2px dashed #eee;
+        padding-bottom: 20px;
+      }
+      .exam-title {
+        color: #2c3e50;
+        font-size: 24px;
+        margin-bottom: 15px;
+        line-height: 1.4;
+      }
+      .audio-section {
+        text-align: center;
+        margin: 20px 0 30px 0;
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+      }
+      .exam-content {
+        font-size: 16px;
+        line-height: 2;
+        color: #333;
+        /* 关键！这个属性让 JSON 里的 \n 变成真正的网页换行 */
+        white-space: pre-wrap;
+        font-family: "Microsoft YaHei", Arial, sans-serif;
+      }
+      .back-btn {
+        display: inline-block;
+        padding: 8px 16px;
+        background: #f1f3f5;
+        color: #495057;
+        text-decoration: none;
+        border-radius: 20px;
+        margin-bottom: 10px;
+        font-size: 14px;
+        font-weight: bold;
+        transition: background 0.2s;
+      }
+      .back-btn:hover {
+        background: #e2e6ea;
+        color: #212529;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- 返回按钮 -->
+      <a href=" " class="back-btn">← 返回试卷列表</a>
+
+      <!-- 加载提示 -->
+      <div
+        id="exam-loading"
+        style="text-align: center; padding: 50px; color: #999"
+      >
+        正在疯狂加载真题中...
+      </div>
+
+      <!-- 试卷主体展示区 -->
+      <div id="exam-display" class="exam-container" style="display: none">
+        <!-- 这里的内容将由下面的 JavaScript 自动填充 -->
+      </div>
+    </div>
+
+    <script>
+      // 🚀 核心逻辑：读取网址上的 ID -> 找试卷 -> 渲染页面
+      async function loadExam() {
+        // 1. 获取网址里的 id 参数 (例如 ?id=jx-eng-2023)
+        const urlParams = new URLSearchParams(window.location.search);
+        const paperId = urlParams.get("id");
+
+        if (!paperId) {
+          document.getElementById("exam-loading").innerHTML =
+            '<span style="color:red;">哎呀，没找到试卷ID！请从首页重新进入。</span>';
+          return;
+        }
+
+        try {
+          // 2. 读取刚才那个完美的 papers.json
+          const res = await fetch("papers.json");
+          if (!res.ok) throw new Error("无法读取试卷数据库");
+          const allPapers = await res.json();
+
+          // 3. 在题库里精准匹配这套卷子
+          const currentPaper = allPapers.find((p) => p.id === paperId);
+
+          if (!currentPaper) {
+            document.getElementById("exam-loading").innerHTML =
+              '<span style="color:red;">试卷不存在或已被删除！</span>';
+            return;
+          }
+
+          // 4. 数据找到了，关掉加载提示，显示试卷框
+          document.getElementById("exam-loading").style.display = "none";
+          const displayDiv = document.getElementById("exam-display");
+          displayDiv.style.display = "block";
+
+          // 5. 组装听力播放器（如果有 audioUrl 的话）
+          let audioHtml = "";
+          if (currentPaper.audioUrl) {
+            audioHtml = `
+                        <div class="audio-section">
+                            <p style="margin-bottom: 12px; color: #555; font-weight: bold;">🎧 听力播放区</p >
+                            <audio controls src="${currentPaper.audioUrl}" style="width: 100%; max-width: 500px;"></audio>
+                        </div>
+                    `;
+          }
+
+          // 6. 像拼积木一样把内容贴到网页上
+          displayDiv.innerHTML = `
+                    <div class="exam-header">
+                        <h2 class="exam-title">${currentPaper.title}</h2>
+                        <span style="background:#fff3e0; color:#ff9800; padding:3px 8px; border-radius:4px; font-size:12px; margin-right:5px;">${currentPaper.year}年</span>
+                        <span style="background:#e8f5e9; color:#388e3c; padding:3px 8px; border-radius:4px; font-size:12px; margin-right:5px;">${currentPaper.grade || "高三"}</span>
+                        <span style="background:#e1f5fe; color:#0288d1; padding:3px 8px; border-radius:4px; font-size:12px;">${currentPaper.subject}</span>
+                    </div>
+                    ${audioHtml}
+                    <div class="exam-content">${currentPaper.content}</div>
+                `;
+        } catch (err) {
+          document.getElementById("exam-loading").innerHTML =
+            `<span style="color:red;">加载失败: ${err.message}</span>`;
+        }
+      }
+
+      // 网页一打开就开始执行
+      window.onload = loadExam;
+    </script>
+  </body>
+</html>
