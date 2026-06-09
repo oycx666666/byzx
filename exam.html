@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>真题阅读 - 江西高考历年真题库</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1 id="paper-title">正在加载试卷...</h1>
+      <a href=" " class="btn" style="background: #666">返回列表</a>
+    </header>
+
+    <div class="container">
+      <div
+        id="paper-content"
+        style="
+          white-space: pre-wrap;
+          line-height: 1.8;
+          font-size: 16px;
+          background: #fff;
+          padding: 30px;
+          border-radius: 8px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        "
+      >
+        加载中，请稍候...
+      </div>
+    </div>
+
+    <script>
+      // 获取地址栏传过来的试卷 ID
+      const urlParams = new URLSearchParams(window.location.search);
+      const paperId = urlParams.get("id");
+
+      async function loadPaperDetail() {
+        try {
+          // 同样直接请求同目录下的 papers.json
+          const res = await fetch("papers.json");
+          const papers = await res.json();
+
+          // 查找对应 ID 的试卷
+          const paper = papers.find((p) => p.id === paperId);
+
+          if (paper) {
+            document.title = paper.title;
+            document.getElementById("paper-title").innerText = paper.title;
+            document.getElementById("paper-content").innerText = paper.content;
+          } else {
+            document.getElementById("paper-content").innerText =
+              "未找到该试卷内容！";
+          }
+        } catch (err) {
+          document.getElementById("paper-content").innerText =
+            "数据加载错误：" + err.message;
+        }
+      }
+
+      if (paperId) {
+        window.onload = loadPaperDetail;
+      } else {
+        document.getElementById("paper-content").innerText =
+          "非法访问：未指定试卷ID";
+      }
+    </script>
+  </body>
+</html>
